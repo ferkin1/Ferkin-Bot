@@ -1,44 +1,47 @@
-import sqlite3
+import sqlalchemy as sqla
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import declarative_base, sessionmaker
 import os
+from dotenv import load_dotenv
 
-DB_PATH = os.getenv('DB_PATH', "data/steam_profiles.db")
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE")
+engine = create_async_engine(DATABASE_URL, echo=False)
+Base = declarative_base()
+SessionLocal = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
-def init_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS steam_profiles (discord_id TEXT PRIMARY KEY, steam_id TEXT NOT NULL);
-        """)
-        conn.commit()
+class SteamProfileDB(Base):
+    __tablename__="steam_profiles"
 
-def link_steam_profile(discord_id:str, steam_id:str):
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO steam_profiles (discord_id, steam_id)
-            VALUES (?, ?)
-            ON CONFLICT(discord_id) DO UPDATE SET steam_id=excluded.steam_id;
-            """, (discord_id, steam_id))
-        conn.commit()
+    discord_id = sqla.Column(sqla.String, primary_key=True)
+    steam_id = sqla.Column(sqla.String, nullable=False)
 
-def get_profile(discord_id:str)-> str | None:
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT steam_id FROM steam_profiles WHERE discord_id = ?", (discord_id,))
-        result = cursor.fetchone()
-        return result[0] if result else None
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-def unlink_profile(discord_id:str):
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM steam_profiles WHERE discord_id = ?", (discord_id,))
-        conn.commit()
+async def link_steam_profile(_discord_id:str, _steam_id:str):
+    async with SessionLocal() as session:
+        profile = await session.get(SteamProfileDB, _discord_id)
+        if profile:
+            profile.steam_id = _steam_id
+        else:
+            session.add(SteamProfileDB(discord_id=_discord_id, steam_id=_steam_id))
+        await session.commit()
 
-def list_profiles():
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM steam_profiles")
-        all_profiles = cursor.fetchall()
+async def get_profile(_discord_id:str):
+    async with SessionLocal() as session:
+        profile = await session.get(SteamProfileDB, _discord_id)
+        return profile.steam_id if profile else None
 
-    return all_profiles
+async def unlink_profile(_discord_id:str):
+    async with SessionLocal() as session:
+        profile = await session.get(SteamProfileDB, _discord_id)
+        if profile:
+            await session.delete(profile)
+            await session.commit()
+
+async def list_profiles():
+    async with SessionLocal() as session:
+        result = await session.execute(sqla.select(SteamProfileDB))
+        return result.scalars().all()

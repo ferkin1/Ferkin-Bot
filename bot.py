@@ -17,7 +17,7 @@ bot = commands.Bot(command_prefix='!f ', intents=intents, case_insensitive=True,
 async def on_ready():
     await bot.wait_until_ready()
     await bot.tree.sync()
-    stpdb.init_db()
+    await stpdb.init_db()
     print(f"Logged in as {bot.user} (ID: {bot.user.id})\n------")
 
 
@@ -45,7 +45,7 @@ async def linksteamprofile(interaction: discord.Interaction, steam_url: str):
                     await interaction.followup.send("❌ Could not resolve Steam vanity name.", ephemeral=True)
                     return
 
-        stpdb.link_steam_profile(str(interaction.user.id), steam_id)
+        await stpdb.link_steam_profile(str(interaction.user.id), steam_id)
         await interaction.followup.send(f"Steam Profile has been linked to your Discord account.", ephemeral=True)
     except ValueError as e:
         await interaction.followup.send(f"{e}", ephemeral=True)
@@ -90,11 +90,35 @@ async def unlinksteam(interaction: discord.Interaction):
     try:
         await interaction.response.defer(ephemeral=True)
         discord_id = str(interaction.user.id)
-        stpdb.unlink_profile(discord_id)
+        await stpdb.unlink_profile(discord_id)
         await interaction.followup.send("Your account has now been unlinked from the bot.", ephemeral=True)
     except Exception as e:
         await interaction.followup.send(f"An error occured!\n{e}", ephemeral=True)
         return
+
+@bot.tree.command(name="showallprofiles", description="Display all linked Steam profiles (admin only)")
+async def showallprofiles(interaction: discord.Interaction):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("You do not have permission to use this command", ephemeral=True)
+        return
+
+    await interaction.response.defer(ephemeral=True)
+
+    from steam_profile_db import SessionLocal, SteamProfileDB
+    async with SessionLocal() as session:
+        result = await session.execute(SteamProfileDB.__table__.select())
+        rows = result.fetchall()
+
+    if not rows:
+        await interaction.followup.send("No profiles are currently linked.", ephemeral=True)
+        return
+
+    msg = "**Linked Steam profiles:**\n\n"
+    for row in rows:
+        msg += f"- Discord ID: `{row.discord_id}` :: Steam ID: `{row.steam_id}`\n"
+
+    await interaction.followup.send(msg[:2000], ephemeral=True)
+
 
 
 
