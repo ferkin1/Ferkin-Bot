@@ -27,10 +27,20 @@ def chunk_appids(appids: list[int], chunk_size:int=60):
 
 
 def get_steam_userid(url: str):
-    match = re.match(r"https?://steamcommunity\.com/(id|profiles)/([^/?#]+)", url.strip())
+    steam_url = url.strip()
+
+    match = re.match(r"^https?://steamcommunity\.com/(id|profiles)/([^/?#]+)", steam_url)
     if match:
         return match.group(2).strip("/")
-    return url.strip()
+
+    if steam_url.isdigit() and len(steam_url) >= 17:
+        return steam_url
+
+    if re.match(r"^[a-zA-Z0-9_-]{3,32}$", steam_url):
+        return steam_url
+
+
+    raise ValueError("Error: Invalid URL")
 
 
 def parse_deals_info(deals:list[dict]):
@@ -42,14 +52,16 @@ def parse_deals_info(deals:list[dict]):
             continue
         normal = deal.get('normalPrice')
         sale = deal.get('salePrice')
-        link = f"https://www.cheapshark.com/redirect?dealID={deal['dealID']}"
-        info = f"{title}\nDiscounted Price: ${sale} - {savings:.0f}% off\nOriginal Price: ${normal}\nSteam Page: [{title}]({link})\n"
+        link = f"<https://www.cheapshark.com/redirect?dealID={deal.get('dealID', '')}>"
+        info = (f"🎮 **{title}**\n"
+                f"♨️ Discounted Price: ${sale} — {savings:.0f}% off\n"
+                f"🧾 Original Price: ~~${normal}~~\n"
+                f"💰 [Click here to view on Steam]({link})"
+                )
         res_list.append(info)
-    if not res_list:
-        print("You have no wish listed games on sale :(")
-        return None
 
-    return res_list
+
+    return res_list if res_list else None
 
 
 class SteamAPIClient:
@@ -122,7 +134,7 @@ class SteamAPIClient:
 if __name__ == "__main__":
     async def main():
         async with SteamAPIClient() as api_test:
-            uid = "https://steamcommunity.com/profiles/76561198080841285"
+            uid = "https://steamcommunity.com/profiles/"
             parsed_uid = get_steam_userid(uid)
             resolved_uid = await api_test.resolve_vanity_url(parsed_uid)
             print(resolved_uid)
