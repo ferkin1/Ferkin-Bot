@@ -10,9 +10,13 @@ client = spb.create_client(DATABASE_URL, DB_KEY)
 
 
 def link_steam_profile(_discord_id:str, _steam_id:str):
-    current_records = client.table(db_table).select("*").eq("discord_id", _discord_id).execute()
-    if current_records.data:
-        raise ValueError("A Steam Profile is already linked to this Discord account. Please unlink first.")
+    discord_records = client.table(db_table).select("steam_id").eq("discord_id", _discord_id).execute()
+    if discord_records.data:
+        raise ValueError("This Discord account is already linked to a Steam Profile. Please unlink first.")
+
+    steam_records = client.table(db_table).select("discord_id").eq("steam_id", _steam_id).execute()
+    if steam_records.data:
+        raise ValueError("A Steam Profile is already linked to a Discord account. Please unlink first.")
 
     client.table(db_table).insert({"discord_id": _discord_id, "steam_id": _steam_id}).execute()
 
