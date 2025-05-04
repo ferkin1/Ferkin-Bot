@@ -4,14 +4,3 @@ services:
     runtime: python
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python bot.py"
-    envVars:
-      - key: BOT_TOKEN
-        sync: false
-      - key: STEAM_API_KEY
-        sync: false
-      - key: DB_PATH
-        value: /data/steam_profiles.db
-    disk:
-      name: steamdb
-      mountPath: /data
-      sizeGB: 1

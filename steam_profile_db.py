@@ -1,47 +1,31 @@
-import sqlalchemy as sqla
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import declarative_base, sessionmaker
+import supabase as spb
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE")
-engine = create_async_engine(DATABASE_URL, echo=False)
-Base = declarative_base()
-SessionLocal = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+DB_KEY = os.getenv("DB_API_KEY")
+db_table = os.getenv("TABLE_NAME")
+client = spb.create_client(DATABASE_URL, DB_KEY)
 
-class SteamProfileDB(Base):
-    __tablename__="steam_profiles"
 
-    discord_id = sqla.Column(sqla.String, primary_key=True)
-    steam_id = sqla.Column(sqla.String, nullable=False)
+def link_steam_profile(_discord_id:str, _steam_id:str):
+    current_records = client.table(db_table).select("*").eq("discord_id", _discord_id).execute()
+    if current_records.data:
+        client.table(db_table).update({"steam_id": _steam_id}).eq("discord_id", _discord_id).execute()
+    else:
+        client.table(db_table).insert({"discord_id": _discord_id, "steam_id": _steam_id}).execute()
 
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+def get_profile(_discord_id:str):
+    try:
+        result = client.table(db_table).select("steam_id").eq("discord_id",_discord_id).execute()
+        data = result.data
+        if not data:
+            return None
+        return data[0]["steam_id"]
+    except Exception as e:
+        print(f"Error retrieving profile: {e}")
+        return None
 
-async def link_steam_profile(_discord_id:str, _steam_id:str):
-    async with SessionLocal() as session:
-        profile = await session.get(SteamProfileDB, _discord_id)
-        if profile:
-            profile.steam_id = _steam_id
-        else:
-            session.add(SteamProfileDB(discord_id=_discord_id, steam_id=_steam_id))
-        await session.commit()
-
-async def get_profile(_discord_id:str):
-    async with SessionLocal() as session:
-        profile = await session.get(SteamProfileDB, _discord_id)
-        return profile.steam_id if profile else None
-
-async def unlink_profile(_discord_id:str):
-    async with SessionLocal() as session:
-        profile = await session.get(SteamProfileDB, _discord_id)
-        if profile:
-            await session.delete(profile)
-            await session.commit()
-
-async def list_profiles():
-    async with SessionLocal() as session:
-        result = await session.execute(sqla.select(SteamProfileDB))
-        return result.scalars().all()
+def unlink_profile(_discord_id:str):
+    client.table(db_table).delete().eq("discord_id", _discord_id).execute()

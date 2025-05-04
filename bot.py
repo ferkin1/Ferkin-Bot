@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
-import discord
+from discord import Intents, Forbidden
+from discord.interactions import Interaction
 from discord.ext import commands
 from discord import app_commands
 from steamapi_service import SteamAPIClient, get_steam_userid, parse_deals_info
@@ -9,7 +10,7 @@ import steam_profile_db as stpdb
 load_dotenv()
 bot_token = os.getenv('BOT_TOKEN')
 
-intents = discord.Intents.default()
+intents = Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!f ', intents=intents, case_insensitive=True, help_command=None)
 
@@ -17,7 +18,6 @@ bot = commands.Bot(command_prefix='!f ', intents=intents, case_insensitive=True,
 async def on_ready():
     await bot.wait_until_ready()
     await bot.tree.sync()
-    await stpdb.init_db()
     print(f"Logged in as {bot.user} (ID: {bot.user.id})\n------")
 
 
@@ -28,9 +28,9 @@ async def helpmenu(ctx):
 
 @bot.tree.command(name="linksteamprofile", description="Link your Steam Profile to your Discord account.")
 @app_commands.describe(steam_url="Your Steam profile URL")
-async def linksteamprofile(interaction: discord.Interaction, steam_url: str):
+async def linksteamprofile(interaction: Interaction, steam_url: str):
+    await interaction.response.defer(ephemeral=True)
     try:
-        await interaction.response.defer(ephemeral=True)
         parsed_uid = get_steam_userid(steam_url)
         if not parsed_uid:
             await interaction.followup.send("❌ Invalid Steam Profile link.", ephemeral=True)
@@ -45,16 +45,16 @@ async def linksteamprofile(interaction: discord.Interaction, steam_url: str):
                     await interaction.followup.send("❌ Could not resolve Steam vanity name.", ephemeral=True)
                     return
 
-        await stpdb.link_steam_profile(str(interaction.user.id), steam_id)
+        stpdb.link_steam_profile(str(interaction.user.id), steam_id)
         await interaction.followup.send(f"Steam Profile has been linked to your Discord account.", ephemeral=True)
     except ValueError as e:
         await interaction.followup.send(f"{e}", ephemeral=True)
         return
 
 @bot.tree.command(name="wishlist", description="Return all wishlisted games that are on sale.")
-async def wishlistdeals(interaction: discord.Interaction):
+async def wishlistdeals(interaction: Interaction):
+    await interaction.response.defer(ephemeral=True)
     try:
-        await interaction.response.defer(ephemeral=True)
         steam_id = stpdb.get_profile(str(interaction.user.id))
         if not steam_id:
             await interaction.followup.send("❌ You haven't linked your Steam Profile with me yet! Use '/linksteamprofile <your Steam Profile URL>'.", ephemeral=True)
@@ -82,42 +82,19 @@ async def wishlistdeals(interaction: discord.Interaction):
 
             if current_chunk:
                 await interaction.followup.send(current_chunk, ephemeral=True)
-    except discord.Forbidden:
+    except Forbidden:
         await interaction.followup.send("❌‼️I couldn't DM you. Please enable direct messages in your privacy settings.", ephemeral=True)
 
 @bot.tree.command(name="unlinksteam", description="Unlink your Steam profile.")
-async def unlinksteam(interaction: discord.Interaction):
+async def unlinksteam(interaction: Interaction):
     try:
         await interaction.response.defer(ephemeral=True)
         discord_id = str(interaction.user.id)
-        await stpdb.unlink_profile(discord_id)
+        stpdb.unlink_profile(discord_id)
         await interaction.followup.send("Your account has now been unlinked from the bot.", ephemeral=True)
     except Exception as e:
         await interaction.followup.send(f"An error occured!\n{e}", ephemeral=True)
         return
-
-@bot.tree.command(name="showallprofiles", description="Display all linked Steam profiles (admin only)")
-async def showallprofiles(interaction: discord.Interaction):
-    if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("You do not have permission to use this command", ephemeral=True)
-        return
-
-    await interaction.response.defer(ephemeral=True)
-
-    from steam_profile_db import SessionLocal, SteamProfileDB
-    async with SessionLocal() as session:
-        result = await session.execute(SteamProfileDB.__table__.select())
-        rows = result.fetchall()
-
-    if not rows:
-        await interaction.followup.send("No profiles are currently linked.", ephemeral=True)
-        return
-
-    msg = "**Linked Steam profiles:**\n\n"
-    for row in rows:
-        msg += f"- Discord ID: `{row.discord_id}` :: Steam ID: `{row.steam_id}`\n"
-
-    await interaction.followup.send(msg[:2000], ephemeral=True)
 
 
 
