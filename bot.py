@@ -85,5 +85,17 @@ async def wishlistdeals(interaction: discord.Interaction):
     except discord.Forbidden:
         await interaction.followup.send("❌‼️I couldn't DM you. Please enable direct messages in your privacy settings.", ephemeral=True)
 
+@bot.tree.command(name="unlinksteam", description="Unlink your Steam profile.")
+async def unlinksteam(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer(ephemeral=True)
+        discord_id = str(interaction.user.id)
+        stpdb.unlink_profile(discord_id)
+        await interaction.followup.send("Your account has now been unlinked from the bot.", ephemeral=True)
+    except Exception as e:
+        await interaction.followup.send(f"An error occured!\n{e}", ephemeral=True)
+        return
+
+
 
 bot.run(bot_token)
