@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord import app_commands
 from steamapi_service import SteamAPIClient, get_steam_userid, parse_deals_info
 import steam_profile_db as stpdb
+from server import start_server
 
 load_dotenv()
 bot_token = os.getenv('BOT_TOKEN')
@@ -99,5 +100,5 @@ async def unlinksteam(interaction: Interaction):
 
 
 
-
+start_server()
 bot.run(bot_token)
