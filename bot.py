@@ -82,8 +82,8 @@ async def wishlistdeals(interaction: Interaction):
 
             if current_chunk:
                 await interaction.followup.send(current_chunk, ephemeral=True)
-    except Forbidden:
-        await interaction.followup.send("❌‼️I couldn't DM you. Please enable direct messages in your privacy settings.", ephemeral=True)
+    except Exception:
+        await interaction.followup.send("❌‼️An error occurred.", ephemeral=True)
 
 @bot.tree.command(name="unlinksteam", description="Unlink your Steam profile.")
 async def unlinksteam(interaction: Interaction):
