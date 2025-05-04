@@ -21,9 +21,10 @@ async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})\n------")
 
 
-@bot.command(name="help")
-async def helpmenu(ctx):
-    await ctx.send(f"**F-Bot Commands**\n/linksteamprofile <Steam Profile URL>:: Links your steam profile with F-Bot so that it can pull games from your Steam Wishlist (Make sure to set your Wishlist to public!)\n\n/wishlist :: Queries CheapShark API to check if your wishlisted games are on sale")
+@bot.tree.command(name="help", description="View available bot commands")
+async def helpmenu(interaction: Interaction):
+    await interaction.response.defer(ephemeral=True)
+    await interaction.followup.send(f"**Bot Commands**\n/linksteamprofile <Steam Profile URL>:: Links your steam profile with F-Bot so that it can pull games from your Steam Wishlist (Make sure to set your Wishlist to public!)\n\n/wishlist :: Queries CheapShark API to check if your wishlisted games are on sale\n\n/unlink :: Unlinks your Steam profile from the bot.")
 
 
 @bot.tree.command(name="linksteamprofile", description="Link your Steam Profile to your Discord account.")
