@@ -1,12 +1,11 @@
 from dotenv import load_dotenv
 import os
-from discord import Intents, Forbidden
+from discord import Intents
 from discord.interactions import Interaction
 from discord.ext import commands
 from discord import app_commands
 from steamapi_service import SteamAPIClient, get_steam_userid, parse_deals_info
 import steam_profile_db as stpdb
-from server import start_server
 
 load_dotenv()
 bot_token = os.getenv('BOT_TOKEN')
@@ -54,6 +53,7 @@ async def linksteamprofile(interaction: Interaction, steam_url: str):
         return
 
 @bot.tree.command(name="wishlist", description="Return all wishlisted games that are on sale.")
+@app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
 async def wishlistdeals(interaction: Interaction):
     await interaction.response.defer(ephemeral=True)
     try:
@@ -98,7 +98,16 @@ async def unlinksteam(interaction: Interaction):
         await interaction.followup.send(f"An error occured!\n{e}", ephemeral=True)
         return
 
+@bot.tree.error
+async def on_app_command_error(interaction: Interaction, error):
+    if isinstance(error, app_commands.errors.CommandOnCooldown):
+        await interaction.response.send(f"⏳ This command is on cooldown. Try again in {int(error.retry_after)} seconds.",
+                                        ephemeral=True)
+    else:
+        await interaction.response.send("❌ An unexpected error occurred.",
+                                        ephemeral=True)
+        raise error
 
 
-start_server()
+
 bot.run(bot_token)
