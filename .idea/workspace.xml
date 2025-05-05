@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="255fb18f-7ac0-4e33-9ed6-04c85baecc0a" name="Changes" comment="- Added small http healthcheck server to keep bot alive">
+    <list default="true" id="255fb18f-7ac0-4e33-9ed6-04c85baecc0a" name="Changes" comment="- Removed server.py&#10;- Added cooldown to /wishlist">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/bot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -269,7 +268,15 @@
       <option name="project" value="LOCAL" />
       <updated>1746399617102</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="- Removed server.py&#10;- Added cooldown to /wishlist">
+      <option name="closed" value="true" />
+      <created>1746407034740</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1746407034740</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -296,7 +303,8 @@
     <MESSAGE value="- helpmenu is now ephemeral" />
     <MESSAGE value="- Updated link_steam_profile to properly check if a steam_id or a discord_id already exists" />
     <MESSAGE value="- Added small http healthcheck server to keep bot alive" />
-    <option name="LAST_COMMIT_MESSAGE" value="- Added small http healthcheck server to keep bot alive" />
+    <MESSAGE value="- Removed server.py&#10;- Added cooldown to /wishlist" />
+    <option name="LAST_COMMIT_MESSAGE" value="- Removed server.py&#10;- Added cooldown to /wishlist" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/DiscordBotSteam$main.coverage" NAME="main Coverage Results" MODIFIED="1745973056137" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

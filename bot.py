@@ -101,10 +101,10 @@ async def unlinksteam(interaction: Interaction):
 @bot.tree.error
 async def on_app_command_error(interaction: Interaction, error):
     if isinstance(error, app_commands.errors.CommandOnCooldown):
-        await interaction.response.send(f"⏳ This command is on cooldown. Try again in {int(error.retry_after)} seconds.",
+        await interaction.response.send_message(content=f"⏳ This command is on cooldown. Try again in {int(error.retry_after)} seconds.",
                                         ephemeral=True)
     else:
-        await interaction.response.send("❌ An unexpected error occurred.",
+        await interaction.response.send_message(content="❌ An unexpected error occurred.",
                                         ephemeral=True)
         raise error
 
